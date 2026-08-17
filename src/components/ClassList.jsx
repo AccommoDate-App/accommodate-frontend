@@ -1,7 +1,10 @@
 import { useState, useEffect } from 'react'
+import ClassModal from './ClassModal'
 
 const ClassList = ({ onSelectClass }) => {
   const [classes, setClasses] = useState([])
+  const [showModal, setShowModal] = useState(false)
+  const [editingClass, setEditingClass] = useState(null)
 
   useEffect(() => {
     const fetchClasses = async () => {
@@ -23,6 +26,12 @@ const ClassList = ({ onSelectClass }) => {
       <p className="text-green-600 text-xs font-semibold tracking-widest uppercase mb-1">Spring 2025</p>
       <div className="flex items-center justify-between mb-1">
         <h1 style={{ fontFamily: 'DM Serif Display, serif' }} className="text-4xl text-gray-900">My Classes</h1>
+        <button
+          onClick={() => { setEditingClass(null); setShowModal(true) }}
+          className="bg-green-500 text-white text-sm rounded-xl px-4 py-2 hover:bg-green-600 cursor-pointer"
+        >
+          + Add Class
+        </button>
       </div>
       <p className="text-gray-400 text-sm mb-8">Select a class to view student accommodations</p>
 
@@ -71,6 +80,12 @@ const ClassList = ({ onSelectClass }) => {
           </div>
         ))}
       </div>
+      {showModal && (
+        <ClassModal
+          selectedClass={editingClass}
+          onClose={() => { setShowModal(false); setEditingClass(null) }}
+        />
+      )}
     </div>
   )
 }

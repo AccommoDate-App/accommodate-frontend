@@ -1,4 +1,6 @@
 import { useState, useEffect } from 'react'
+import StudentModal from './StudentModal'
+import AccommodationModal from './AccommodationModal'
 
 const categoryStyles = {
   Testing: { card: 'bg-blue-50 border-blue-100', dot: 'bg-blue-400', title: 'text-blue-700', badge: 'text-blue-600' },
@@ -11,38 +13,47 @@ const getInitials = (name) => {
 }
 
 const StudentList = ({ selectedClass, onBack }) => {
-// stores the accommodation data that comes back from the API
-const [studentAccommodations, setStudentAccommodations] = useState([])
+  // stores the accommodation data that comes back from the API
+  const [studentAccommodations, setStudentAccommodations] = useState([])
 
-// keeps track of which student rows are open so they don't reset on re-render
-const [expandedStudents, setExpandedStudents] = useState({})
-// fetch the students and their accommodations for the selected class
-  useEffect(() => {
-    const loadStudentAccommodations = async () => {
-      try {
-        const res = await fetch(`http://localhost:4000/api/reminders?classId=${selectedClass.id}`)
-        const data = await res.json()
-        setStudentAccommodations(data)
-      } catch (error) {
-        console.error('Failed to fetch studentAccommodations:', error)
-      }
+  // keeps track of which student rows are open so they don't reset on re-render
+  const [expandedStudents, setExpandedStudents] = useState({})
+
+  const [showModal, setShowModal] = useState(false)
+  const [editingStudent, setEditingStudent] = useState(null)
+
+  const [showAccommodationModal, setShowAccommodationModal] = useState(false)
+  const [editingAccommodation, setEditingAccommodation] = useState(null)
+  const [selectedStudentId, setSelectedStudentId] = useState(null)
+
+  // fetch the students and their accommodations for the selected class
+  const loadStudentAccommodations = async () => {
+    try {
+      const res = await fetch(`http://localhost:4000/api/reminders?classId=${selectedClass.id}`)
+      const data = await res.json()
+      setStudentAccommodations(data)
+    } catch (error) {
+      console.error('Failed to fetch studentAccommodations:', error)
     }
+  }
+
+  useEffect(() => {
     loadStudentAccommodations()
   }, [selectedClass.id])
 
-// the API returns one row per accommodation so Alex with 2 accommodations shows up twice
-// reduce groups them into one entry per student with their accommodations nested inside
-const groupedByStudent = studentAccommodations.reduce((acc, item) => {
+  // the API returns one row per accommodation so Alex with 2 accommodations shows up twice
+  // reduce groups them into one entry per student with their accommodations nested inside
+  const groupedByStudent = studentAccommodations.reduce((acc, item) => {
     if (!acc[item.student_id]) {
-        // first time seeing this student, create their entry
-        acc[item.student_id] = { name: item.student_name, accommodations: [] }
+      // first time seeing this student, create their entry
+      acc[item.student_id] = { name: item.student_name, accommodations: [] }
     }
     // add this accommodation to their list
     acc[item.student_id].accommodations.push(item)
     return acc
-}, {})
-// flip the open/closed state for whichever student row was clicked
-const handleStudentClick = (studentId) => {
+  }, {})
+  // flip the open/closed state for whichever student row was clicked
+  const handleStudentClick = (studentId) => {
     setExpandedStudents(prev => ({
       ...prev,
       [studentId]: !prev[studentId]
@@ -70,6 +81,12 @@ const handleStudentClick = (studentId) => {
           </div>
           <h1 style={{ fontFamily: 'DM Serif Display, serif' }} className="text-4xl text-gray-900 mb-1">{selectedClass.name}</h1>
           <p className="text-gray-400 text-sm">{studentCount} student{studentCount !== 1 ? 's' : ''} with active IEPs</p>
+          <button
+            onClick={() => { setEditingStudent(null); setShowModal(true) }}
+            className="bg-green-500 text-white text-sm rounded-xl px-4 py-2 mt-4 hover:bg-green-600 cursor-pointer"
+          >
+            + Add Student
+          </button>
         </div>
       </div>
 
@@ -102,28 +119,49 @@ const handleStudentClick = (studentId) => {
 
             {/* Expanded accommodations */}
             {expandedStudents[studentId] && (
-              <div className="px-6 pb-6 grid grid-cols-2 gap-3">
-                {student.accommodations.map((acc, i) => {
-                  const style = categoryStyles[acc.category] || { card: 'bg-gray-50 border-gray-100', dot: 'bg-gray-400', title: 'text-gray-700', badge: 'text-gray-500' }
-                  return (
-                    <div key={i} className={`rounded-xl border p-4 ${style.card}`}>
-                      <div className="flex items-center justify-between mb-2">
-                        <div className="flex items-center gap-2">
-                          <div className={`w-2 h-2 rounded-full ${style.dot}`}></div>
-                          <p className={`text-sm font-medium ${style.title}`}>{acc.title}</p>
+              <div className="px-6 pb-6">
+                <div className="grid grid-cols-2 gap-3">
+                  {student.accommodations.map((acc, i) => {
+                    const style = categoryStyles[acc.category] || { card: 'bg-gray-50 border-gray-100', dot: 'bg-gray-400', title: 'text-gray-700', badge: 'text-gray-500' }
+                    return (
+                      <div key={i} className={`rounded-xl border p-4 ${style.card}`}>
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="flex items-center gap-2">
+                            <div className={`w-2 h-2 rounded-full ${style.dot}`}></div>
+                            <p className={`text-sm font-medium ${style.title}`}>{acc.title}</p>
+                          </div>
+                          <span className={`text-xs ${style.badge}`}>{acc.frequency}</span>
                         </div>
-                        <span className={`text-xs ${style.badge}`}>{acc.frequency}</span>
+                        <p className="text-gray-500 text-xs mb-2">{acc.description}</p>
+                        <p className={`text-xs font-medium ${style.badge}`}>{acc.category}</p>
                       </div>
-                      <p className="text-gray-500 text-xs mb-2">{acc.description}</p>
-                      <p className={`text-xs font-medium ${style.badge}`}>{acc.category}</p>
-                    </div>
-                  )
-                })}
+                    )
+                  })}
+                </div>
+                <button
+                  onClick={() => { setSelectedStudentId(studentId); setEditingAccommodation(null); setShowAccommodationModal(true) }}
+                  className="mt-3 text-green-600 text-xs hover:underline cursor-pointer"
+                >
+                  + Add Accommodation
+                </button>
               </div>
             )}
           </div>
         ))}
       </div>
+      {showModal && (
+        <StudentModal
+          selectedStudent={editingStudent}
+          onClose={() => { setShowModal(false); setEditingStudent(null); loadStudentAccommodations() }}
+        />
+      )}
+      {showAccommodationModal && (
+        <AccommodationModal
+          selectedAccommodation={editingAccommodation}
+          studentId={selectedStudentId}
+          onClose={() => { setShowAccommodationModal(false); setEditingAccommodation(null); loadStudentAccommodations() }}
+        />
+      )}
     </div>
   )
 }
