@@ -10,7 +10,7 @@ const AccommodationModal = ({ onClose, selectedAccommodation, studentId }) => {
     const accommodationData = { title, description, category, frequency, student_id: studentId }
 
     if (selectedAccommodation) {
-      await fetch(`http://localhost:4000/api/accommodations/${selectedAccommodation.id}`, {
+      await fetch(`http://localhost:4000/api/accommodations/${selectedAccommodation.accommodation_id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(accommodationData)

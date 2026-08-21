@@ -41,6 +41,20 @@ const StudentList = ({ selectedClass, onBack }) => {
     loadStudentAccommodations()
   }, [selectedClass.id])
 
+  // handles deleting a student from the StudentList
+  const handleDeleteStudent = async (id) => {
+    await fetch(`http://localhost:4000/api/students/${id}`, { method: 'DELETE' })
+    loadStudentAccommodations()
+  }
+
+  // handles deleting an Accommodation 
+  const handleDeleteAccommodation = async (id) => {
+    await fetch(`http://localhost:4000/api/accommodations/${id}`, { method: 'DELETE' })
+    loadStudentAccommodations()
+  }
+
+
+
   // the API returns one row per accommodation so Alex with 2 accommodations shows up twice
   // reduce groups them into one entry per student with their accommodations nested inside
   const groupedByStudent = studentAccommodations.reduce((acc, item) => {
@@ -113,7 +127,18 @@ const StudentList = ({ selectedClass, onBack }) => {
                 <span className="bg-gray-100 text-gray-600 text-xs rounded-full px-3 py-1">
                   {student.accommodations.length} accommodation{student.accommodations.length !== 1 ? 's' : ''}
                 </span>
+                <button
+                  onClick={(e) => { e.stopPropagation(); setEditingStudent({ id: studentId, name: student.name }); setShowModal(true) }}
+                  className="text-gray-400 hover:text-gray-600 text-sm cursor-pointer"
+                >✏️</button>
+                <button
+                  onClick={(e) => { e.stopPropagation(); handleDeleteStudent(studentId) }}
+                  className="text-gray-400 hover:text-red-500 text-sm cursor-pointer"
+                >🗑</button>
                 <span className={`text-gray-400 transition-transform duration-300 ${expandedStudents[studentId] ? 'rotate-180' : ''}`}>▾</span>
+
+
+
               </div>
             </div>
 
@@ -133,7 +158,19 @@ const StudentList = ({ selectedClass, onBack }) => {
                           <span className={`text-xs ${style.badge}`}>{acc.frequency}</span>
                         </div>
                         <p className="text-gray-500 text-xs mb-2">{acc.description}</p>
-                        <p className={`text-xs font-medium ${style.badge}`}>{acc.category}</p>
+                        <div className="flex items-center justify-between">
+                          <p className={`text-xs font-medium ${style.badge}`}>{acc.category}</p>
+                          <div className="flex gap-2">
+                            <button
+                              onClick={() => { setEditingAccommodation(acc); setSelectedStudentId(acc.student_id); setShowAccommodationModal(true) }}
+                              className="text-gray-400 hover:text-gray-600 text-xs cursor-pointer"
+                            >✏️</button>
+                            <button
+                             onClick={() => handleDeleteAccommodation(acc.accommodation_id)}
+                              className="text-gray-400 hover:text-red-500 text-xs cursor-pointer"
+                            >🗑</button>
+                          </div>
+                        </div>
                       </div>
                     )
                   })}

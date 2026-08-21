@@ -6,18 +6,24 @@ const ClassList = ({ onSelectClass }) => {
   const [showModal, setShowModal] = useState(false)
   const [editingClass, setEditingClass] = useState(null)
 
-  useEffect(() => {
-    const fetchClasses = async () => {
-      try {
-        const res = await fetch('http://localhost:4000/api/classes')
-        const data = await res.json()
-        setClasses(data)
-      } catch (error) {
-        console.error('Failed to fetch classes:', error)
-      }
+  const loadClasses = async () => {
+    try {
+      const res = await fetch('http://localhost:4000/api/classes')
+      const data = await res.json()
+      setClasses(data)
+    } catch (error) {
+      console.error('Failed to fetch classes:', error)
     }
-    fetchClasses()
+  }
+
+  useEffect(() => {
+    loadClasses()
   }, [])
+
+  const handleDeleteClass = async (id) => {
+    await fetch(`http://localhost:4000/api/classes/${id}`, { method: 'DELETE' })
+    loadClasses()
+  }
 
   return (
     <div className="max-w-5xl mx-auto px-8 py-10">
@@ -60,30 +66,35 @@ const ClassList = ({ onSelectClass }) => {
             className="bg-white rounded-2xl border border-gray-100 p-6 cursor-pointer hover:-translate-y-1 hover:shadow-md transition-all duration-300"
           >
             <div className="flex items-start justify-between mb-4">
-              <div className="bg-green-50 rounded-xl w-10 h-10 flex items-center justify-center text-xl">
-                📚
+              <div className="bg-green-50 rounded-xl w-10 h-10 flex items-center justify-center text-xl">📚</div>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={(e) => { e.stopPropagation(); setEditingClass(cls); setShowModal(true) }}
+                  className="text-gray-400 hover:text-gray-600 text-sm cursor-pointer"
+                >✏️</button>
+                <button
+                  onClick={(e) => { e.stopPropagation(); handleDeleteClass(cls.id) }}
+                  className="text-gray-400 hover:text-red-500 text-sm cursor-pointer"
+                >🗑</button>
+                <span className="bg-green-100 text-green-700 text-xs font-medium rounded-full px-3 py-1">Class</span>
               </div>
-              <span className="bg-green-100 text-green-700 text-xs font-medium rounded-full px-3 py-1">
-                Class
-              </span>
             </div>
             <h2 style={{ fontFamily: 'DM Serif Display, serif' }} className="text-gray-900 text-xl mb-1">{cls.name}</h2>
             <p className="text-gray-400 text-sm mb-4">{cls.description}</p>
             <div className="flex items-center justify-between">
               <div className="flex gap-2">
-                <div className="bg-green-500 text-white rounded-full w-7 h-7 flex items-center justify-center text-xs font-medium">
-                  S
-                </div>
+                <div className="bg-green-500 text-white rounded-full w-7 h-7 flex items-center justify-center text-xs font-medium">S</div>
               </div>
               <span className="text-gray-400 text-xs">View class →</span>
             </div>
           </div>
         ))}
       </div>
+
       {showModal && (
         <ClassModal
           selectedClass={editingClass}
-          onClose={() => { setShowModal(false); setEditingClass(null) }}
+          onClose={() => { setShowModal(false); setEditingClass(null); loadClasses() }}
         />
       )}
     </div>
